@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>درباره ما | مهرآیین</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header"><div class="header-inner">
+<a class="brand" href="index.html"><img src="images/logo.png" alt=""><span>مهرآیین</span></a>
+<div class="header-actions"><button class="icon-btn" id="themeToggle">☼</button><a class="header-btn" href="admin.html">ورود مدیر</a><a class="cart-btn" href="cart.html">🛒 سبد خرید <b id="cartCount">0</b></a></div>
+</div><nav class="nav"><a href="index.html">صفحه اصلی</a><a href="index.html#products">محصولات</a><a href="index.html#categories">دسته‌بندی‌ها</a><a class="active" href="about.html">درباره ما</a></nav></header>
+<main class="page-main">
+<section class="about-card">
+<span class="eyebrow">داستان مهرآیین</span>
+<h1>درباره ما</h1>
+<p>ما یک گروه از هیئت متوسلین به چهارده معصوم(ع) هستیم که با فروش این محصولات دست‌ساز همراه با کودک و نوجوان پول آن را خرج کمک به آسیب‌دیدگان جنگ می‌کنیم.</p>
+<div class="donation-box">
+<h2>در این پویش همراه ما باشید ♡</h2>
+<p>اگر مایلید در این پویش شرکت کنید کمک‌های خود را از ما دریغ نکنید.</p>
+<div class="card-number"><span id="donationCard">شماره کارت هنوز توسط مدیر تنظیم نشده است.</span><button id="copyDonation">کپی</button></div>
+<small>شماره کارت از تنظیمات مدیر سایت خوانده می‌شود.</small>
+</div>
+<a class="primary-btn" href="index.html">بازگشت به فروشگاه</a>
+</section>
+<section class="about-contact panel"><h2>اطلاعات تماس</h2><p>📞 <span id="storePhone">در حال بارگذاری...</span></p><p>📍 <span id="storeAddress">در حال بارگذاری...</span></p></section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
