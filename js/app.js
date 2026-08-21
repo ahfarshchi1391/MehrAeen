@@ -30,7 +30,8 @@ async function getSettings(){
   settingsCache={
     card:data?.card_number||'', owner:data?.card_owner||'',
     aboutImage:data?.about_image_url||'', aboutText:data?.about_text||'',
-    storeName:data?.store_name||'مهرآیین', phone:data?.store_phone||'', address:data?.store_address||''
+    storeName:data?.store_name||'مهرآیین', phone:data?.store_phone||'', address:data?.store_address||'',
+    shippingCost:Number(data?.shipping_cost||0)
   };
   return settingsCache;
 }
@@ -83,7 +84,7 @@ async function renderProduct(){
 async function renderCart(){
  const box=$("#cartView");if(!box)return;const products=await getProducts(),cart=getCart();
  if(!cart.length){box.innerHTML='<div class="panel empty">سبد خرید شما خالی است.<br><br><a class="primary-btn" href="index.html">مشاهده محصولات</a></div>';return}
- let total=0;box.innerHTML=`<div class="panel">${cart.map(i=>{const p=products.find(x=>Number(x.id)===Number(i.id));if(!p)return"";total+=p.price*i.qty;return `<div class="cart-row"><div class="mini-image">${p.image?`<img src="${p.image}" alt="">`:`${p.emoji||"♡"}`}</div><div><b>${escapeHtml(p.name)}</b><div class="muted">${money(p.price)}</div></div><div class="quantity"><button onclick="changeQty(${p.id},-1)">−</button><b>${i.qty}</b><button onclick="changeQty(${p.id},1)">+</button></div><div><b>${money(p.price*i.qty)}</b><br><button class="small-btn" onclick="removeCart(${p.id})">حذف</button></div></div>`}).join("")}<div class="cart-total"><span>مبلغ نهایی</span><span>${money(total)}</span></div><a class="primary-btn full" href="checkout.html">ادامه ثبت سفارش</a></div>`;
+ let total=0;const s=await getSettings();const shipping=Math.max(0,Number(s.shippingCost||0));box.innerHTML=`<div class="panel">${cart.map(i=>{const p=products.find(x=>Number(x.id)===Number(i.id));if(!p)return"";total+=p.price*i.qty;return `<div class="cart-row"><div class="mini-image">${p.image?`<img src="${p.image}" alt="">`:`${p.emoji||"♡"}`}</div><div><b>${escapeHtml(p.name)}</b><div class="muted">${money(p.price)}</div></div><div class="quantity"><button onclick="changeQty(${p.id},-1)">−</button><b>${i.qty}</b><button onclick="changeQty(${p.id},1)">+</button></div><div><b>${money(p.price*i.qty)}</b><br><button class="small-btn" onclick="removeCart(${p.id})">حذف</button></div></div>`}).join("")}<div class="cart-total"><div><span>جمع محصولات</span><span>${money(total)}</span></div><div><span>هزینه ارسال</span><span>${money(shipping)}</span></div><div><b>مبلغ قابل پرداخت</b><b>${money(total+shipping)}</b></div></div><a class="primary-btn full" href="checkout.html">ادامه ثبت سفارش</a></div>`;
 }
 function changeQty(id,d){let c=getCart(),i=c.find(x=>Number(x.id)===Number(id));if(!i)return;i.qty+=d;if(i.qty<=0)c=c.filter(x=>Number(x.id)!==Number(id));saveCart(c);renderCart()}
 function removeCart(id){saveCart(getCart().filter(x=>Number(x.id)!==Number(id)));renderCart();toast("محصول حذف شد")}
@@ -91,8 +92,8 @@ async function cartTotal(){const ps=await getProducts();return getCart().reduce(
 
 async function renderCheckout(){
  const sum=$("#checkoutSummary");if(!sum)return;const total=await cartTotal();if(!getCart().length){location.href="cart.html";return}
- const products=await getProducts();sum.innerHTML=`<h2>خلاصه سفارش</h2>${getCart().map(i=>{const p=products.find(x=>Number(x.id)===Number(i.id));return `<p>${escapeHtml(p?.name||"")} × ${i.qty}<br><b>${money((p?.price||0)*i.qty)}</b></p>`}).join("")}<hr><h2>مبلغ نهایی: ${money(total)}</h2>`;
- const s=await getSettings();$("#checkoutCard").textContent=s.card||"شماره کارت هنوز توسط مدیر تنظیم نشده است.";$("#copyCheckoutCard").onclick=()=>copyText(s.card);$("#checkoutForm").onsubmit=submitOrder;
+ const products=await getProducts();const s=await getSettings();const shipping=Math.max(0,Number(s.shippingCost||0));sum.innerHTML=`<h2>خلاصه سفارش</h2>${getCart().map(i=>{const p=products.find(x=>Number(x.id)===Number(i.id));return `<p>${escapeHtml(p?.name||"")} × ${i.qty}<br><b>${money((p?.price||0)*i.qty)}</b></p>`}).join("")}<hr><p><b>جمع محصولات:</b> ${money(total)}</p><p><b>هزینه ارسال:</b> ${money(shipping)}</p><h2>مبلغ قابل پرداخت: ${money(total+shipping)}</h2>`;
+$("#checkoutCard").textContent=s.card||"شماره کارت هنوز توسط مدیر تنظیم نشده است.";$("#copyCheckoutCard").onclick=()=>copyText(s.card);$("#checkoutForm").onsubmit=submitOrder;
 }
 function copyText(t){if(!t)return toast("شماره کارت هنوز تنظیم نشده است");navigator.clipboard?.writeText(t);toast("کپی شد")}
 
@@ -117,7 +118,9 @@ async function submitOrder(e){
    const items=cart.map(i=>{const p=products.find(x=>Number(x.id)===Number(i.id));return {product_id:p?.id||null,product_name:p?.name||"محصول",price:p?.price||0,quantity:i.qty}}).filter(x=>x.product_id);
    if(!items.length)throw new Error('محصولات سبد خرید دیگر در فروشگاه موجود نیستند');
    const receiptPath=await uploadReceipt(file);
-   const total=items.reduce((a,x)=>a+x.price*x.quantity,0);
+   const productsTotal=items.reduce((a,x)=>a+x.price*x.quantity,0);
+   const shipping=Math.max(0,Number(s.shippingCost||0));
+   const total=productsTotal+shipping;
    const {data:order,error:orderErr}=await supabaseClient.from('orders').insert({customer_name:`${form.firstName} ${form.lastName}`,customer_phone:form.phone,customer_address:`${form.province}، ${form.city}، ${form.address}${form.postalCode?`، کدپستی: ${form.postalCode}`:''}`,total_price:total,payment_status:'در انتظار بررسی',order_status:'جدید',receipt_url:receiptPath}).select('id').single();
    if(orderErr)throw orderErr;
    const rows=items.map(x=>({...x,order_id:order.id}));
@@ -185,6 +188,7 @@ async function adminTab(tab){
 <label>نام فروشگاه<input name="storeName" value="${escapeAttr(s.storeName||'مهرآیین')}" required></label>
 <label>شماره تماس<input name="phone" value="${escapeAttr(s.phone||'')}" placeholder="مثلاً 0912..."></label>
 <label>آدرس فروشگاه<input name="address" value="${escapeAttr(s.address||'')}" placeholder="آدرس یا توضیح محل"></label>
+<label>هزینه ارسال (تومان)<input name="shippingCost" type="number" min="0" value="${Number(s.shippingCost||0)}" placeholder="مثلاً 50000"></label>
 <label>شماره کارت مقصد<input name="card" value="${escapeAttr(s.card)}" placeholder="6037..."></label>
 <label>نام صاحب حساب<input name="owner" value="${escapeAttr(s.owner)}"></label>
 <label class="wide">متن درباره ما<textarea name="aboutText" rows="6">${escapeHtml(s.aboutText||'ما یک گروه از هیئت متوسلین به چهارده معصوم(ع) هستیم که با فروش این محصولات دست‌ساز همراه با کودک و نوجوان پول آن را خرج کمک به آسیب‌دیدگان جنگ می‌کنیم.')}</textarea></label>
@@ -257,6 +261,7 @@ async function saveSettings(e){e.preventDefault();const f=new FormData(e.target)
     store_name:f.get('storeName')||'مهرآیین',
     store_phone:f.get('phone')||'',
     store_address:f.get('address')||'',
+    shipping_cost:Math.max(0,Number(f.get('shippingCost')||0)),
     card_number:f.get('card')||'', card_owner:f.get('owner')||'',
     about_text:f.get('aboutText')||'', about_image_url:aboutImage,
     updated_at:new Date().toISOString()
